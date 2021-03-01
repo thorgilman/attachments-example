@@ -3,11 +3,14 @@ package com.template.flows;
 import co.paralleluniverse.fibers.Suspendable;
 import com.template.contracts.DataContract;
 import com.template.states.DataState;
+import net.corda.core.contracts.Attachment;
+import net.corda.core.crypto.SecureHash;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,8 +35,18 @@ public class Flows {
             final DataState dataState = new DataState(dataString, getOurIdentity(), destParty);
 
             final TransactionBuilder txBuilder = new TransactionBuilder(notary);
-            txBuilder.addOutputState(dataState);
-            txBuilder.addCommand(new DataContract.Commands.Create(), getOurIdentity().getOwningKey());
+
+
+            final String hashString = "XXX";
+
+            // Add Attachment to Transaction
+            final SecureHash attachmentHash = SecureHash.parse(hashString);
+            txBuilder.addAttachment(attachmentHash);
+
+            // Utilize Attachment data
+            final Attachment attachment = getServiceHub().getAttachments().openAttachment(attachmentHash);
+            final InputStream inputStream = attachment.open();
+
 
             final SignedTransaction ptx = getServiceHub().signInitialTransaction(txBuilder);
             final List<FlowSession> sessions = Arrays.asList(initiateFlow(getOurIdentity()));
